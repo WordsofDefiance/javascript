@@ -1,0 +1,50 @@
+// Lazy-loading iframes
+// Usage: 1) Wrap iframe in a <div class="lazy"></div>
+//        2) Change the src of the iframe to data-src
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    var lazyloadImages = [...document.querySelectorAll(".lazy")];
+    var lazyloadThrottleTimeout;
+
+    function lazyload () {
+        if(lazyloadThrottleTimeout) {
+          clearTimeout(lazyloadThrottleTimeout);
+        }    
+        
+        lazyloadThrottleTimeout = setTimeout(function() {
+            lazyloadImages.forEach(function (node, nodeIndex) {
+                if(elementInViewport(node)){
+                	let iframe = node.querySelector('iframe');
+                    if ( !iframe.src ) {
+	                    let src = iframe.dataset.src;
+	                    iframe.src = src;
+	                    iframe.dataset.src = "";
+                	}
+                	lazyloadImages.splice(nodeIndex, 1);
+                }
+                
+            });
+            if(lazyloadImages.length == 0) { 
+              document.removeEventListener("scroll", lazyload);
+              window.removeEventListener("resize", lazyload);
+              window.removeEventListener("orientationChange", lazyload);
+            }
+        }, 20);
+    }
+
+	function elementInViewport(el) {
+	    // Addng a fuzz factor makes it so while we're not truly seeing if the element is in view, 
+	    // we're saying it is when it's close, so we start the loading a smidge before the element comes into view
+	    const fuzz = 100;
+	    const rect = el.getBoundingClientRect();
+	    return (rect.top - fuzz) < (window.innerHeight || document.body.clientHeight) 
+	        && rect.left < (window.innerWidth || document.body.clientWidth)
+	        && (rect.bottom + fuzz) > (window.innerHeight || document.body.clientHeight);
+	}
+  
+    document.addEventListener("scroll", lazyload);
+    window.addEventListener("resize", lazyload);
+    window.addEventListener("orientationChange", lazyload);
+
+});
